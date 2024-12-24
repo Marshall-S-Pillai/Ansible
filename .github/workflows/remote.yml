@@ -1,6 +1,6 @@
 name: Terraform and Ansible CI/CD
 
-on:
+on:    
   workflow_dispatch:
 
 jobs:
