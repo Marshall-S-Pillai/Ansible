@@ -15,7 +15,7 @@ resource "aws_key_pair" "web_key" {
 }
 
 # Security group to allow HTTP (port 80) and SSH (port 22) traffic
-resource "aws_security_group" "web_sg" {
+resource "aws_security_group" "lab_2" {
   name        = "web_sg"
   description = "Allow HTTP and SSH"
   
