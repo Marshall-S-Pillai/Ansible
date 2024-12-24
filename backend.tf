@@ -1,9 +1,9 @@
 
 terraform {
   backend "s3" {
-    bucket         = "powertool9087"
+    bucket         = "powertool99"
     key            = "ansible/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "ap-south-1"
     encrypt        = true
     dynamodb_table = "powertool"
   }
