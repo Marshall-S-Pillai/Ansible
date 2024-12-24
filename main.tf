@@ -46,7 +46,7 @@ resource "aws_instance" "web_server" {
   ami           = "ami-01816d07b1128cd2d"  # Replace with a valid AMI ID for your region
   instance_type = "t2.micro"
   key_name      = aws_key_pair.web_key.key_name
-  security_groups = [aws_security_group.web_sg.name]
+  security_groups = [aws_security_group.lab_2.name]
   
   tags = {
     Name = "WebServer"
