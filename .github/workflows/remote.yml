@@ -41,7 +41,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
       run: |
-        # Add a Terraform file for creating the VPC and Security Group dynamically
+        
         cat <<EOF > main.tf
         provider "aws" {
           region = "us-east-1"
