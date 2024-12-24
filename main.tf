@@ -2,78 +2,49 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Generate a new SSH key pair using TLS
-resource "tls_private_key" "web_key" {
-  algorithm = "RSA"
-  rsa_bits  = 2048
+# Step 1: Create a secret in AWS Secrets Manager with the new name
+resource "aws_secretsmanager_secret" "powertool" {
+  name        = "my-database-secret1"
+  description = "A secret for my database password"
 }
 
-# Create AWS key pair using the generated public key
-resource "aws_key_pair" "web_key" {
-  key_name   = "web-key"
-  public_key = tls_private_key.web_key.public_key_openssh
+# Step 2: Store the secret value (e.g., db password) in the Secrets Manager with the new version name
+resource "aws_secretsmanager_secret_version" "powertool_version" {
+  secret_id     = aws_secretsmanager_secret.powertool.id
+  secret_string = jsonencode({
+    db_password = "my-secret-password-123"
+  })
+
+  # Explicitly depend on the secret creation
+  depends_on = [aws_secretsmanager_secret.powertool]
 }
 
-# Security group to allow HTTP (port 80) and SSH (port 22) traffic
-resource "aws_security_group" "web_sg" {
-  name        = "web_sg"
-  description = "Allow HTTP and SSH"
-  
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Correct usage of the equals sign and a list
-  }
-  
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Correct usage of the equals sign and a list
-  }
+# Step 3: Retrieve the secret version using a data source with the updated name
+data "aws_secretsmanager_secret_version" "powertool_version" {
+  secret_id = aws_secretsmanager_secret.powertool.id
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]  # Correct usage of the equals sign and a list
-  }
+  # Ensure this data source waits until the secret version is available
+  depends_on = [aws_secretsmanager_secret_version.powertool_version]
 }
 
-# Provision an EC2 instance
-resource "aws_instance" "web_server" {
-  ami           = "ami-01816d07b1128cd2d"  # Replace with a valid AMI ID for your region
-  instance_type = "t2.micro"
-  key_name      = aws_key_pair.web_key.key_name
-  security_groups = [aws_security_group.web_sg.name]
-  
-  tags = {
-    Name = "WebServer"
-  }
-
-  # Use remote-exec to configure EC2 with Ansible
-  provisioner "remote-exec" {
-    inline = [
-      "echo 'Provisioning started!'"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = tls_private_key.web_key.private_key_pem
-      host        = self.public_ip
-    }
-  }
-}
-
-# Output the private key to be used later in GitHub Actions
-output "private_key" {
-  value     = tls_private_key.web_key.private_key_pem
+# Step 4: Output the secret value (marked as sensitive)
+output "db_password" {
+  value     = jsondecode(data.aws_secretsmanager_secret_version.powertool_version.secret_string)["db_password"]
   sensitive = true
 }
 
-# Output the public key (if needed)
-output "public_key" {
-  value = tls_private_key.web_key.public_key_openssh
+# Step 5: Launch an EC2 instance and use the secret value (e.g., for authentication)
+resource "aws_instance" "powertool_instance" {
+  ami           = "ami-01816d07b1128cd2d"  # Replace with your region's AMI
+  instance_type = "t2.micro"
+
+  # Use the secret password for an environment variable or initialization
+  user_data = <<-EOF
+              #!/bin/bash
+              echo "DB_PASSWORD=${jsondecode(data.aws_secretsmanager_secret_version.powertool_version.secret_string)["db_password"]}" > /etc/db_password.txt
+              EOF
+
+  tags = {
+    Name = "powertool_int"
+  }
 }
