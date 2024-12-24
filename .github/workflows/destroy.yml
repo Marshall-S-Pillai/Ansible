@@ -25,9 +25,9 @@ jobs:
 
     - name: Initialize Terraform for VPC module
       run: |
-        terraform init -backend-config="bucket=powertool9087" \
+        terraform init -backend-config="bucket=powertool99" \
                        -backend-config="key=vpc/terraform.tfstate" \
-                       -backend-config="region=us-east-1" \
+                       -backend-config="region=ap-south-1" \
                        -backend-config="encrypt=true" \
                        -backend-config="dynamodb_table=powertool"
 
@@ -38,9 +38,9 @@ jobs:
       run: |
         export TF_INPUT=false
         terraform init -reconfigure \
-                       -backend-config="bucket=powertoo9087" \
+                       -backend-config="bucket=powertool99" \
                        -backend-config="key=security_group/terraform.tfstate" \
-                       -backend-config="region=us-east-1" \
+                       -backend-config="region=ap-south-1" \
                        -backend-config="encrypt=true" \
                        -backend-config="dynamodb_table=powertool"
 
@@ -51,9 +51,9 @@ jobs:
       run: |
         export TF_INPUT=false
         terraform init -reconfigure \
-                       -backend-config="bucket=powertoo9087" \
+                       -backend-config="bucket=powertool99" \
                        -backend-config="key=subnet/terraform.tfstate" \
-                       -backend-config="region=us-east-1" \
+                       -backend-config="region=ap-south-1" \
                        -backend-config="encrypt=true" \
                        -backend-config="dynamodb_table=powertool"
 
