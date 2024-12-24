@@ -45,9 +45,19 @@ resource "aws_security_group" "lab_2" {
   }
 }
 
+# Lookup the latest Amazon Linux 2 AMI
+data "aws_ami" "latest_amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
 # Provision an EC2 instance
 resource "aws_instance" "web_server" {
-  ami           = "ami-01816d07b1128cd2d"  # Replace with a valid AMI ID
+  ami           = data.aws_ami.latest_amazon_linux.id
   instance_type = "t2.micro"
   key_name      = aws_key_pair.web_key.key_name
   security_groups = [aws_security_group.lab_2.name]
