@@ -1,0 +1,65 @@
+name: Terraform and Ansible CI/CD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Validate Terraform configuration
+        run: terraform validate
+
+      - name: Plan Terraform deployment
+        run: terraform plan
+
+      - name: Apply Terraform configuration
+        run: terraform apply -auto-approve
+
+      - name: Save private key to file
+        run: |
+          echo "${{ steps.terraform.outputs.private_key }}" > private-key.pem
+          chmod 600 private-key.pem
+        env:
+          PRIVATE_KEY: ${{ steps.terraform.outputs.private_key }}
+
+  ansible:
+    runs-on: ubuntu-latest
+    needs: terraform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Ansible
+        run: sudo apt-get install -y ansible
+
+      - name: Install SSH key for Ansible
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ steps.terraform.outputs.private_key }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i "${{ steps.terraform.outputs.instance_ip }}," setup_web_server.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
